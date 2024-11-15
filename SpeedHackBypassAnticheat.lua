@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
-local runSpeed = 16 -- Базовая желаемая скорость, можно менять на желаемое значение
+local runSpeed = 50 -- Базовая желаемая скорость, можно менять на желаемое значение
 
 local function onCharacterAdded(character)
     local humanoid = character:WaitForChild("Humanoid")
