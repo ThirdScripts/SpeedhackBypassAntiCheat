@@ -1,46 +1,45 @@
-local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
-local player = Players.LocalPlayer
-local runSpeed = 50 -- Базовая желаемая скорость, можно менять на желаемое значение
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local bodyVelocity = nil
+local userInputService = game:GetService("UserInputService")
 
-local function onCharacterAdded(character)
-    local humanoid = character:WaitForChild("Humanoid")
-    local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-    
-    -- Устанавливаем базовую скорость
-    humanoid.WalkSpeed = runSpeed
-    
-    -- Отслеживаем нажатие клавиш для направления движения
-    game:GetService("RunService").RenderStepped:Connect(function()
-        local direction = Vector3.new()
-
-        -- Получаем направление движения по текущему вводу
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-            direction = direction + Vector3.new(0, 0, -1) -- Вперёд
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-            direction = direction + Vector3.new(0, 0, 1) -- Назад
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-            direction = direction + Vector3.new(-1, 0, 0) -- Влево
-        end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-            direction = direction + Vector3.new(1, 0, 0) -- Вправо
-        end
-
-        -- Если направление не нулевое, то обновляем CFrame персонажа с учётом ориентации
-        if direction.magnitude > 0 then
-            direction = direction.unit * runSpeed * 0.1
-            local moveDirection = humanoidRootPart.CFrame:VectorToWorldSpace(direction)
-            humanoidRootPart.CFrame = humanoidRootPart.CFrame + moveDirection
-        end
-    end)
+-- Функция для включения спидхака
+local function speedHack(speed)
+    -- Создаём BodyVelocity, если его ещё нет
+    if not bodyVelocity then
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)  -- Огромная сила для движения
+        bodyVelocity.Velocity = humanoidRootPart.CFrame.LookVector * speed  -- Направление и скорость
+        bodyVelocity.Parent = humanoidRootPart  -- Присоединяем к HumanoidRootPart
+    else
+        -- Если BodyVelocity уже есть, обновляем его скорость
+        bodyVelocity.Velocity = humanoidRootPart.CFrame.LookVector * speed
+    end
 end
 
--- Подключаемся к CharacterAdded, чтобы применять изменения при каждом появлении персонажа
-player.CharacterAdded:Connect(onCharacterAdded)
-
--- Применяем изменения к текущему персонажу, если он уже существует
-if player.Character then
-    onCharacterAdded(player.Character)
+-- Функция для выключения спидхака
+local function disableSpeedHack()
+    if bodyVelocity then
+        bodyVelocity:Destroy()  -- Удаляем BodyVelocity, чтобы остановить ускорение
+        bodyVelocity = nil
+    end
 end
+
+-- Отслеживание нажатия клавиши X
+userInputService.InputBegan:Connect(function(input, gameProcessed)
+    -- Игнорировать, если действие уже обрабатывается игрой (например, при открытии инвентаря)
+    if gameProcessed then return end
+
+    -- Проверяем, если нажата клавиша X
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.X then
+        speedHack(100)  -- Включаем спидхак с заданной скоростью
+    end
+end)
+
+-- Отслеживание отпускания клавиши X
+userInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.X then
+        disableSpeedHack()  -- Отключаем спидхак
+    end
+end)
